@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import javax.swing.JOptionPane;
 
 /**
@@ -23,7 +25,7 @@ public class inscription extends javax.swing.JFrame {
     public inscription() {
         initComponents();
     }
- 
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -101,8 +103,8 @@ public class inscription extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
-        
-        
+
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
@@ -111,35 +113,38 @@ public class inscription extends javax.swing.JFrame {
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         // TODO add your handling code here:
-         String pseudo = jTextField1.getText();
-    String password = jTextField2.getText();
-    
-    try {
-        Socket socket = new Socket("localhost", 8888); // Assuming both are on the same machine
-        PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
-        printWriter.println(pseudo);
-        printWriter.println(password);
-        
-        // Read server acknowledgment
-        InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream());
-        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-        String acknowledgment = bufferedReader.readLine();
-        
-        // Close the connections
-        printWriter.close();
-        bufferedReader.close();
-        socket.close();
-        
-        // Display success or error message
-        if (acknowledgment.equals("SUCCESS")) {
-            JOptionPane.showMessageDialog(this, "Utilisateur ajouté avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Erreur lors de l'ajout de l'utilisateur", "Erreur", JOptionPane.ERROR_MESSAGE);
+        String pseudo = jTextField1.getText();
+        String password = jTextField2.getText();
+
+        // JDBC connection parameters
+        String url = "jdbc:mysql://localhost:3306/chat_socket";
+        String username = "pseudo";
+        String dbPassword = "password";
+
+        try {
+            // Establishing a connection to the database
+            Connection connection = DriverManager.getConnection(url, username, dbPassword);
+
+            // Creating a SQL query for insertion
+            String insertQuery = "INSERT INTO users (pseudo, password) VALUES (?, ?)";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+                preparedStatement.setString(1, pseudo);
+                preparedStatement.setString(2, password);
+
+                // Executing the query
+                int rowsAffected = preparedStatement.executeUpdate();
+
+                // Display success or error message
+                if (rowsAffected > 0) {
+                    JOptionPane.showMessageDialog(this, "Utilisateur ajouté avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de l'ajout de l'utilisateur", "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Erreur de connexion à la base de données", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
-    } catch (IOException ex) {
-        ex.printStackTrace();
-        JOptionPane.showMessageDialog(this, "Erreur de connexion au serveur", "Erreur", JOptionPane.ERROR_MESSAGE);
-    }
     }//GEN-LAST:event_jButton3ActionPerformed
 
     /**
